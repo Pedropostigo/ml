@@ -1,4 +1,6 @@
 from xgboost import XGBClassifier as XGBClass
+import pandas as pd
+import numpy as np
 
 # class for the XGB Classifier where the methods will be added
 class XGBClassifier(XGBClass):
@@ -36,8 +38,33 @@ class XGBClassifier(XGBClass):
                                             base_score, random_state, seed,
                                             missing, **kwargs)
 
+        # variable to save if the model has been previously trained
+        self.isTrained = False
+
     def fit(self, X, y):
         super(XGBClassifier, self).fit(X, y)
+        #save that the model has been trained
+        self.isTrained = True
 
     def predict(self, X):
         return super(XGBClassifier, self).predict(X)
+
+    def variableImportance(self):
+        # check if the model has been previously trained
+        if self.isTrained:
+            # get variable importance from original XGB Classifier
+            varImp = self.get_booster().get_score(importance_type = 'weight')
+            # save variable importance in a Data Frame
+            varImp = pd.DataFrame({'variables': list(varImp.keys()),
+                                    'importance': list(varImp.values())})
+            # reorder variables in the data frame
+            varImp = varImp.reindex(('variables', 'importance'), axis = 1)
+            # compute importance as percentage over total
+            varImp['importance'] = varImp['importance']/np.sum(varImp['importance'])
+            # sort variables from most important to least important
+            varImp = varImp.sort_values(by = 'importance', ascending = False)
+
+            return varImp
+        else:
+            # TODO: raise an exception saying that the model is not trained
+            print("Model is not trained. Model must be trained first")
