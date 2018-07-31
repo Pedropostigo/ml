@@ -103,7 +103,7 @@ class XGBRegressor(XGBReg):
                 seed = None,
                 missing = None,
                 **kwargs):
-        # call the original __init__ method of the XGBClassifier
+        # call the original __init__ method of the XGBRegressor
         super(XGBRegressor, self).__init__(max_depth, learning_rate, n_estimators,
                                             silent, objective, booster, n_jobs,
                                             nthread, gamma, min_child_weight,
@@ -124,3 +124,13 @@ class XGBRegressor(XGBReg):
 
     def variableImportance(self):
         return(variableImportance(self))
+
+    def tune(self, X, y, params, metric, cv = 5):
+        from sklearn.model_selection import GridSearchCV
+        from ml.metrics import score
+
+        gs = GridSearchCV(self, params, cv = cv, scoring = score(metric))
+        gs.fit(X, y)
+
+        print(f"Best score: {gs.best_score_}")
+        print(f"Best parameters: {gs.best_params_}")
