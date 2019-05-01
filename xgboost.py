@@ -66,10 +66,16 @@ class XGBClassifier(XGBClass):
         # variable to save if the model has been previously trained
         self.isTrained = False
 
-    def fit(self, X, y):
-        super(XGBClassifier, self).fit(X, y)
+    def fit(self, X, y, eval_set = None, eval_metric = None, verbose = False):
+        super(XGBClassifier, self).fit(X, y, eval_set = eval_set, eval_metric = eval_metric, verbose = verbose)
         #save that the model has been trained
         self.isTrained = True
+
+    def evals_result(self):
+        """
+        Method that returns the evaluation sets given in fit method
+        """
+        return  super(XGBClassifier, self).evals_result()
 
     def predict(self, X):
         return super(XGBClassifier, self).predict(X)
@@ -114,10 +120,17 @@ class XGBRegressor(XGBReg):
 
         self.isTrained = False
 
-    def fit(self, X, y):
-        super(XGBRegressor, self).fit(X, y)
+    def fit(self, X, y, eval_set = None, eval_metric = None, verbose = False):
+        super(XGBRegressor, self).fit(X, y, eval_set = eval_set, eval_metric = eval_metric, verbose = verbose)
         # save that the model has been trained
         self.isTrained = True
+    
+    def evals_result(self):
+        """
+        Method that returns the evaluation sets given in fit method
+        """
+        return  super(XGBRegressor, self).evals_result()
+
 
     def predict(self, X):
         return super(XGBRegressor, self).predict(X)
@@ -127,7 +140,7 @@ class XGBRegressor(XGBReg):
 
     def tune(self, X, y, params, metric, cv = 5):
         from sklearn.model_selection import GridSearchCV
-        from ml.metrics import score
+        from metrics import score
 
         gs = GridSearchCV(self, params, cv = cv, scoring = score(metric))
         gs.fit(X, y)
