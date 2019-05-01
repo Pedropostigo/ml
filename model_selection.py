@@ -4,6 +4,8 @@ from sklearn.model_selection import KFold
 
 import numpy as np
 
+import catboost as cat
+
 
 def expand_grid(params):
     """
@@ -67,11 +69,22 @@ def cv(model, X, y, metric, folds = 5):
 
     # create empty list to store the predictions
     preds = np.zeros(len(y))
-
+    
     # for each fold, compute the metric and the out-of-sample prediction
     for id_train, id_val in kf.split(X):
+
         # fit the model with the train folds
-        model.fit(X.loc[id_train], y[id_train])
+        if type(model) == cat.core.CatBoostRegressor:
+            # guardar features categoricos y su posición
+            cat_features = [x for x in X.columns.values if X[x].dtypes == 'object']
+            pos = [X.columns.get_loc(col) for col in cat_features]
+
+            # crear el objeto pool y entrenar el modelo
+            pool = cat.Pool(X.loc[id_train], y[id_train], cat_features = pos)
+            model.fit(pool, verbose = 0)
+        else:
+            model.fit(X.loc[id_train], y[id_train])
+
         # predict with the out-of-sample fold
         preds[id_val] =  model.predict(X.loc[id_val])
         # compute the metric and append it to the metrics list
