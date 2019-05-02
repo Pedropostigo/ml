@@ -77,8 +77,14 @@ class XGBClassifier(XGBClass):
         """
         return  super(XGBClassifier, self).evals_result()
 
-    def predict(self, X):
-        return super(XGBClassifier, self).predict(X)
+    def predict(self, X, probs = True):
+        # TODO: solve what to do when predicting multiple classes
+        if probs:
+            preds = super(XGBClassifier, self).predict_proba(X)
+            preds = [pred[1] for pred in preds]
+            return preds
+        else:
+            return super(XGBClassifier, self).predict(X)
 
     def variableImportance(self):
         return(variableImportance(self))
