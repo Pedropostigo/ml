@@ -1,25 +1,48 @@
 from xgboost import XGBClassifier as XGBClass
 from xgboost import XGBRegressor as XGBReg
+
 import pandas as pd
 import numpy as np
 
 # auxilar function to get the variable importance for both the XGB XGBClassifier
 # and XGB Regressor
-def variableImportance(model):
-    # TODO: permitir cambiar el tipo de importancia
+def variableImportance(model, sort):
+
     # check if the model has been previously trained
     if model.isTrained:
         # get variable importance from original XGB Classifier
-        varImp = model.get_booster().get_score(importance_type = 'weight')
+        weight = model.get_booster().get_score(importance_type = 'weight')
+        gain = model.get_booster().get_score(importance_type = 'gain')
+        cover = model.get_booster().get_score(importance_type = 'cover')
+
         # save variable importance in a Data Frame
-        varImp = pd.DataFrame({'variables': list(varImp.keys()),
-                                'importance': list(varImp.values())})
+
+        # weight = number of times a particular feature occurs in the trees of the model
+        weight = pd.DataFrame({'variables': list(weight.keys()),
+                                'weight': list(weight.values())})
+
+        # gain = feature contribution for each tree in the model. more gain -> more important
+        # in generating a prediction
+        gain = pd.DataFrame({'variables': list(gain.keys()),
+                                'gain': list(gain.values())})
+
+        # coverage = relative number of observations related to the feature
+        cover = pd.DataFrame({'variables': list(cover.keys()),
+                                'cover': list(cover.values())})
+
+        # union of data frames in one final dataframe
+        varImp = pd.merge(weight, gain, how = "outer", on = "variables")
+        varImp = pd.merge(varImp, cover, how = "outer", on = "variables")
+
+
         # reorder variables in the data frame
-        varImp = varImp.reindex(('variables', 'importance'), axis = 1)
+        varImp = varImp.reindex(('variables', 'gain', 'cover', 'weight'), axis = 1)
+
         # compute importance as percentage over total
-        varImp['importance'] = varImp['importance']/np.sum(varImp['importance'])
+        # varImp['importance'] = varImp['importance']/np.sum(varImp['importance'])
+        
         # sort variables from most important to least important
-        varImp = varImp.sort_values(by = 'importance', ascending = False)
+        varImp = varImp.sort_values(by = sort, ascending = False)
         return varImp
 
     else:
@@ -87,7 +110,7 @@ class XGBClassifier(XGBClass):
             return super(XGBClassifier, self).predict(X)
 
     def variableImportance(self):
-        return(variableImportance(self))
+        return(variableImportance(self, sort = "gain"))
 
 
 # class for the CGB Regressor where the methods will be added
@@ -142,7 +165,7 @@ class XGBRegressor(XGBReg):
         return super(XGBRegressor, self).predict(X)
 
     def variableImportance(self):
-        return(variableImportance(self))
+        return(variableImportance(self, sort = "gain"))
 
     def tune(self, X, y, params, metric, cv = 5):
         from sklearn.model_selection import GridSearchCV
