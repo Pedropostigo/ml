@@ -1,6 +1,6 @@
 from itertools import product
 
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, StratifiedKFold
 
 import numpy as np
 
@@ -46,7 +46,7 @@ def expand_grid(params):
     return grid
 
 
-def cv(model, X, y, metric, folds = 5):
+def cv(model, X, y, metric, folds = 5, stratified = False):
     """
     Function to compute the cross validation metrics and get the out-of-sample predictions
 
@@ -62,7 +62,12 @@ def cv(model, X, y, metric, folds = 5):
     preds   -- a numpy array containg the out-of-sample predictions for each fold
     """
     # create a KFold object to compute fold indexes
-    kf = KFold(n_splits = folds)
+    if stratified:
+        kf = StratifiedKFold(n_splits = folds)
+        split = kf.split(X, y)
+    else:
+        kf = KFold(n_splits = folds)
+        split = kf.split(X)
 
     # create empty list to store the metrics
     metrics = []
@@ -71,7 +76,7 @@ def cv(model, X, y, metric, folds = 5):
     preds = np.zeros(len(y))
     
     # for each fold, compute the metric and the out-of-sample prediction
-    for id_train, id_val in kf.split(X):
+    for id_train, id_val in split:
 
         # fit the model with the train folds
         if type(model) == cat.core.CatBoostRegressor:
