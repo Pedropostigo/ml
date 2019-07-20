@@ -46,7 +46,7 @@ def expand_grid(params):
     return grid
 
 
-def cv(model, X, y, metric, folds = 5, stratified = False):
+def cv(model, X, y, metric, folds = 5, stratified = False, seed = None):
     """
     Function to compute the cross validation metrics and get the out-of-sample predictions
 
@@ -63,10 +63,10 @@ def cv(model, X, y, metric, folds = 5, stratified = False):
     """
     # create a KFold object to compute fold indexes
     if stratified:
-        kf = StratifiedKFold(n_splits = folds)
+        kf = StratifiedKFold(n_splits = folds, random_state = seed)
         split = kf.split(X, y)
     else:
-        kf = KFold(n_splits = folds)
+        kf = KFold(n_splits = folds, random_state = seed)
         split = kf.split(X)
 
     # create empty list to store the metrics
