@@ -1,6 +1,7 @@
 from itertools import product
+from time import time
 
-from sklearn.model_selection import KFold, StratifiedKFold
+from sklearn.model_selection import KFold, StratifiedKFold, TimeSeriesSplit
 
 import numpy as np
 
@@ -46,25 +47,29 @@ def expand_grid(params):
     return grid
 
 
-def cv(model, X, y, metric, folds = 5, stratified = False, seed = None):
+def cv(model, X, y, metric, folds = 5, split_type = 'normal', seed = None, verbose = 0):
     """
     Function to compute the cross validation metrics and get the out-of-sample predictions
 
     Parameters:
-    model   -- a model object with a fit and predict methods
-    X       -- pandas data frame containing the features used to train the model
-    y       -- numpy array or pandas series containing the target variable
-    metric  -- metric funtion used to evaluate the model. The function is of the form f(real, pred)
-    folds   -- number of folds to use in the cross validation process
+    model       -- a model object with a fit and predict methods
+    X           -- pandas data frame containing the features used to train the model
+    y           -- numpy array or pandas series containing the target variable
+    metric      -- metric funtion used to evaluate the model. The function is of the form f(real, pred)
+    folds       -- number of folds to use in the cross validation process
+    split_type  -- can be 'normal', 'stratified' or 'timeseries'
 
     Return:
-    metrics -- a list with the evaluation results for each fold
-    preds   -- a numpy array containg the out-of-sample predictions for each fold
+    metrics     -- a list with the evaluation results for each fold
+    preds       -- a numpy array containg the out-of-sample predictions for each fold
     """
     # create a KFold object to compute fold indexes
-    if stratified:
+    if split_type == 'stratified':
         kf = StratifiedKFold(n_splits = folds, random_state = seed)
         split = kf.split(X, y)
+    elif split_type == 'timeseries':
+        kf = TimeSeriesSplit(n_splits = folds)
+        split = kf.split(X)
     else:
         kf = KFold(n_splits = folds, random_state = seed)
         split = kf.split(X)
@@ -76,7 +81,13 @@ def cv(model, X, y, metric, folds = 5, stratified = False, seed = None):
     preds = np.zeros(len(y))
     
     # for each fold, compute the metric and the out-of-sample prediction
+    if verbose > 0:
+        i = 0
+        print("Initializing Cross-validation...\n")
+
     for id_train, id_val in split:
+        if verbose > 0:
+            tic = time()
 
         # fit the model with the train folds
         if type(model) == cat.core.CatBoostRegressor:
@@ -95,4 +106,12 @@ def cv(model, X, y, metric, folds = 5, stratified = False, seed = None):
         # compute the metric and append it to the metrics list
         metrics.append(metric(y[id_val], preds[id_val]))
 
+        # print result
+        if verbose > 0:
+            i += 1
+            toc = time()
+            print(f"Finished fold {i} of {folds} folds. Result: {metric(y[id_val], preds[id_val])}. " +
+            f"Time taken: {np.round((toc - tic)/60, 1)} m.")
+
+    print("\n")
     return metrics, preds
