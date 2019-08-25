@@ -72,19 +72,19 @@ class XGBClassifier(XGBClass):
                 scale_pos_weight = 1,
                 base_score = 0.5,
                 random_state = 0,
-                seed = None,
                 missing = None,
                 **kwargs):
 
         # call the original __init__ method of the XGBClassifier
-        super(XGBClassifier, self).__init__(max_depth, learning_rate, n_estimators,
-                                            silent, objective, booster, n_jobs,
-                                            nthread, gamma, min_child_weight,
-                                            max_delta_step, subsample,
-                                            colsample_bytree, colsample_bylevel,
-                                            reg_alpha, reg_lambda, scale_pos_weight,
-                                            base_score, random_state, seed,
-                                            missing, **kwargs)
+        super(XGBClassifier, self).__init__(max_depth = max_depth, learning_rate = learning_rate, 
+                                            n_estimators = n_estimators, silent = silent, 
+                                            objective = objective, booster = booster, n_jobs = n_jobs,
+                                            nthread = nthread, gamma = gamma, min_child_weight = min_child_weight,
+                                            max_delta_step = max_delta_step, subsample = subsample,
+                                            colsample_bytree = colsample_bytree, colsample_bylevel = colsample_bylevel,
+                                            reg_alpha = reg_alpha, reg_lambda = reg_lambda, scale_pos_weight = scale_pos_weight,
+                                            base_score = base_score, random_state = random_state,
+                                            missing = missing, **kwargs)
 
         # variable to save if the model has been previously trained
         self.isTrained = False
@@ -135,17 +135,18 @@ class XGBRegressor(XGBReg):
                 scale_pos_weight = 1,
                 base_score = 0.5,
                 random_state = 0,
-                seed = None,
                 missing = None,
                 **kwargs):
         # call the original __init__ method of the XGBRegressor
-        super(XGBRegressor, self).__init__(max_depth, learning_rate, n_estimators,
-                                            silent, objective, booster, n_jobs,
-                                            nthread, gamma, min_child_weight,
-                                            max_delta_step, subsample, colsample_bytree,
-                                            colsample_bylevel, reg_alpha, reg_lambda,
-                                            scale_pos_weight, base_score, random_state,
-                                            seed, missing, **kwargs)
+        super(XGBRegressor, self).__init__(max_depth = max_depth, learning_rate = learning_rate, 
+                                            n_estimators = n_estimators, silent = silent,
+                                            objective = objective, booster = booster, n_jobs = n_jobs,
+                                            nthread = nthread, gamma = gamma, min_child_weight = min_child_weight,
+                                            max_delta_step = max_delta_step, subsample = subsample, 
+                                            colsample_bytree = colsample_bytree, colsample_bylevel = colsample_bylevel, 
+                                            reg_alpha = reg_alpha, reg_lambda = reg_lambda,
+                                            scale_pos_weight = scale_pos_weight, base_score = base_score, 
+                                            random_state = random_state, missing = missing, **kwargs)
 
         self.isTrained = False
 
