@@ -15,6 +15,7 @@ from sklearn.model_selection import KFold, StratifiedKFold, TimeSeriesSplit
 import numpy as np
 
 import lightgbm as lgbm
+import xgboost as xgb
 import catboost as cat
 
 from .handle_json import read_json, save_json
@@ -137,13 +138,20 @@ def copy_model(model):
     same class as the original model
     """
 
+    # Light GBM
     if isinstance(model, lgbm.LGBMClassifier):
         return lgbm.LGBMClassifier(**model.get_params())
+
+    # XGBoost
+    elif isinstance(model, xgb.XGBClassifier):
+        return xgb.XGBClassifier(**model.get_params())
+    elif isinstance(model, xgb.XGBRegressor):
+        return xgb.XGBRegressor(**model.get_params())
 
     else:
         print("Copy model not implemented yet")
 
-def tune_model(model, X, y, params, metric, folds = 5, random_state = None, file_name = None):
+def tune_model(model, X, y, params, metric, folds = 5, split_type = 'normal',  random_state = None, file_name = None):
     
     # get a tunning model
     tunning_model = copy_model(model)
@@ -169,8 +177,7 @@ def tune_model(model, X, y, params, metric, folds = 5, random_state = None, file
         if len(tested_result) == 1:
             metrics = tested_result[0]['score']
         else:
-            # TODO: no siempre tiene que ser stratified, ponerlo como parámetro
-            metrics, _ = cv(tunning_model, X, y, metric, folds = 5, split_type = 'stratified', seed = random_state)
+            metrics, _ = cv(tunning_model, X, y, metric, folds = 5, split_type = split_type, seed = random_state)
             tested_params['tested_params'].append({'params': tunning_model.get_params(),
                                                    'score': metrics})
             
