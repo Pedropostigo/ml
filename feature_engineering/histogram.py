@@ -33,7 +33,7 @@ def histogram(X, feat, n_buckets = 10, scale = False, agg_params = None):
         hist = hist.reset_index()
                 
     else:
-        hist['bin'] = pd.cut(hist[feat], bins = n_buckets, labels = False, duplicates = 'drop') + 1
+        hist.loc[:, 'bin'] = pd.cut(hist[feat], bins = n_buckets, labels = False, duplicates = 'drop') + 1
         hist = hist.groupby(['bin'], as_index = False).agg(agg_dict)
         hist.columns = list(map('_'.join, hist.columns.values))
         hist = hist.reset_index(drop = True)
