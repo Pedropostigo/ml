@@ -60,22 +60,26 @@ def expand_grid(params):
     return grid
 
 
-def cv(model, X, y, metric, folds = 5, split_type = 'normal', seed = None, verbose = 0):
+def cv(model, X, y, metrics, folds = 5, split_type = 'normal', seed = None, verbose = 0):
     """
     Function to compute the cross validation metrics and get the out-of-sample predictions
 
     Parameters:
-    model       -- a model object with a fit and predict methods
-    X           -- pandas data frame containing the features used to train the model
-    y           -- numpy array or pandas series containing the target variable
-    metric      -- metric funtion used to evaluate the model. The function is of the form f(real, pred)
-    folds       -- number of folds to use in the cross validation process
-    split_type  -- can be 'normal', 'stratified' or 'timeseries'
+    model (object)          -- a model object with a fit and predict methods
+    X (pandas dataframe)    -- pandas data frame containing the features used to train the model
+    y (pandas dataframe)    -- numpy array or pandas series containing the target variable
+    metrics (dict)          -- a dic containing as key the name of the metric, and as value the 
+                                metric funtion used to evaluate the model. The function is of the form f(real, pred)
+    folds (int)             -- number of folds to use in the cross validation process
+    split_type (str)        -- can be 'normal', 'stratified' or 'timeseries'
 
     Return:
-    metrics     -- a list with the evaluation results for each fold
-    preds       -- a numpy array containg the out-of-sample predictions for each fold
+    results (dict)          -- a list with the evaluation results for each fold
+    preds (np array)        -- a numpy array containg the out-of-sample predictions for each fold
     """
+    # reset the index of the DataFrames
+    X = X.reset_index(drop = True); y = y.reset_index(drop = True)
+
     # create a KFold object to compute fold indexes
     if split_type == 'stratified':
         kf = StratifiedKFold(n_splits = folds, random_state = seed)
@@ -87,8 +91,10 @@ def cv(model, X, y, metric, folds = 5, split_type = 'normal', seed = None, verbo
         kf = KFold(n_splits = folds, random_state = seed)
         split = kf.split(X)
 
-    # create empty list to store the metrics
-    metrics = []
+    # createa a dictionary of empty lists to store the results
+    results = {}
+    for m in metrics.keys():
+        results[m] = []
 
     # create empty list to store the predictions
     preds = np.zeros(len(y))
@@ -105,7 +111,7 @@ def cv(model, X, y, metric, folds = 5, split_type = 'normal', seed = None, verbo
         # fit the model with the train folds
         if type(model) == cat.core.CatBoostRegressor:
             # guardar features categoricos y su posición
-            cat_features = [x for x in X.columns.values if X[x].dtypes == 'object']
+            cat_features = [x for x in X.columns.values if X[x].dtype.name in ['category', 'object']]
             pos = [X.columns.get_loc(col) for col in cat_features]
 
             # crear el objeto pool y entrenar el modelo
@@ -116,20 +122,23 @@ def cv(model, X, y, metric, folds = 5, split_type = 'normal', seed = None, verbo
 
         # predict with the out-of-sample fold
 
-        # TODO: gran parche para que funcione con el LightGBM, arreglar cuanto antes
-        preds[id_val] =  [i[1] for i in model.predict_proba(X.loc[id_val])]
-        # compute the metric and append it to the metrics list
-        metrics.append(metric(y[id_val], preds[id_val]))
+
+        # TODO: ver las diferencias entre regresión y clasificación
+        preds[id_val] =  model.predict(X.loc[id_val])
+
+        # compute the different metrics and append them to the results dict
+        for m in metrics.keys():
+            results[m].append(metrics[m](y[id_val], preds[id_val]))
 
         # print result
         if verbose > 0:
             i += 1
             toc = time()
-            print(f"Finished fold {i} of {folds} folds. Result: {metric(y[id_val], preds[id_val])}. " +
+            print(f"Finished fold {i} of {folds} folds. " +
             f"Time taken: {np.round((toc - tic)/60, 1)} m.")
             print("\n")
 
-    return metrics, preds
+    return results, preds
 
 
 def copy_model(model):
