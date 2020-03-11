@@ -13,6 +13,7 @@ from time import time
 from sklearn.model_selection import KFold, StratifiedKFold, TimeSeriesSplit
 
 import numpy as np
+import pandas as pd
 
 import lightgbm as lgbm
 import xgboost as xgb
@@ -65,17 +66,17 @@ def cv(model, X, y, metrics, folds = 5, split_type = 'normal', seed = None, verb
     Function to compute the cross validation metrics and get the out-of-sample predictions
 
     Parameters:
-    model (object)          -- a model object with a fit and predict methods
-    X (pandas dataframe)    -- pandas data frame containing the features used to train the model
-    y (pandas dataframe)    -- numpy array or pandas series containing the target variable
-    metrics (dict)          -- a dic containing as key the name of the metric, and as value the 
-                                metric funtion used to evaluate the model. The function is of the form f(real, pred)
-    folds (int)             -- number of folds to use in the cross validation process
-    split_type (str)        -- can be 'normal', 'stratified' or 'timeseries'
+        model (object)          -- a model object with a fit and predict methods
+        X (pandas dataframe)    -- pandas data frame containing the features used to train the model
+        y (pandas dataframe)    -- numpy array or pandas series containing the target variable
+        metrics (dict)          -- a dic containing as key the name of the metric, and as value the 
+                                    metric funtion used to evaluate the model. The function is of the form f(real, pred)
+        folds (int)             -- number of folds to use in the cross validation process
+        split_type (str)        -- can be 'normal', 'stratified' or 'timeseries'
 
     Return:
-    results (dict)          -- a list with the evaluation results for each fold
-    preds (np array)        -- a numpy array containg the out-of-sample predictions for each fold
+        results (dict)          -- a list with the evaluation results for each fold
+        preds (np array)        -- a numpy array containg the out-of-sample predictions for each fold
     """
     # reset the index of the DataFrames
     X = X.reset_index(drop = True); y = y.reset_index(drop = True)
@@ -139,6 +140,70 @@ def cv(model, X, y, metrics, folds = 5, split_type = 'normal', seed = None, verb
             print("\n")
 
     return results, preds
+
+
+def bayessian_optimization(model, X, y, metric, bounds, init_points = 10, n_iter = 20, maximize = True, folds = 5, seed = None):
+    """
+    Function to perform bayessian optimization for the parameters of any model
+    
+    Parameters:
+        model (object)                      --
+        X (pandas dataframe)                --
+        y (pandas series)                   --
+        metric (function)                   --
+        bounds (dict)                       -- dictionary containing the parameters as keys and a tuple for the limits of parameter as values
+        init_points (int)                   -- number of random initial points to use in the Bayessian Optimization algorithm
+        n_iter (int)                        -- number of iterations after initial random points to use in the Bayessian Optimization algorithm
+        maximize (bool)                     -- whether the algorithm should maximize or minimize the evaluation metric
+        folds (integer)                     -- number of folds to use in the cross-validation metric
+        seed (integer)                      --
+
+    Returns:
+        aaaa
+    """
+
+    # definition of the metric dict
+    metric_dict = {'metric': metric}
+
+    # definition of a score function to perform Bayessian Optimization
+    def score_function(**params):
+        
+        # change the parameters of the model
+        model.set_params(**params)
+
+        # cross validate the model and get the results
+        results, _ = cv(model, X, y, metrics = metric_dict, seed = seed)
+
+        # get the mean of the metric for the CV score
+        mean_metric = np.mean(results['metric'])
+        if maximize:
+            return mean_metric
+        else:
+            return -1 * mean_metric
+
+    # perform Bayessian Optimization
+    from bayes_opt import BayesianOptimization
+
+    optimizer = BayesianOptimization(f = score_function, pbounds = bounds, random_state = seed)
+    optimizer.maximize(init_points = init_points, n_iter = n_iter)
+    
+    # get the results of the Bayessian Optimization
+    best_score = optimizer.max['target']
+    best_params = optimizer.max['params']
+
+    iterations = {'iteration': [], 'result': []}
+    for i in bounds.keys():
+        iterations[i] = []
+
+    for i, j in enumerate(optimizer.res):
+        iterations['iteration'].append(i)
+        iterations['result'].append(j['target'])
+        for key in bounds.keys():
+            iterations[key].append(j['params'][key] )
+
+    iterations = pd.DataFrame(iterations)
+
+    return best_score, best_params, iterations
 
 
 def copy_model(model):
