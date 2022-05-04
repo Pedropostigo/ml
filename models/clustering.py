@@ -12,7 +12,7 @@ class KMeans(sk_KMeans):
                                             algorithm = algorithm)
 
 
-    def select_clusters(self, X, y, beginning_clusters = 2, end_clusters = 10):
+    def select_clusters(self, X, beginning_clusters = 2, end_clusters = 10):
         params = self.get_params()
         n_clusters = []
         inertia = []
@@ -20,7 +20,7 @@ class KMeans(sk_KMeans):
         for i in range(beginning_clusters, end_clusters + 1):
             params['n_clusters'] = i
             k_means_model = sk_KMeans(**params)
-            k_means_model.fit(X = X, y = y)
+            k_means_model.fit(X = X)
 
             n_clusters.append(i)
             inertia.append(k_means_model.inertia_)
@@ -36,7 +36,6 @@ if __name__ == '__main__':
     print(data.head())
 
     k_means = KMeans()
-    n_clusters, inertia = k_means.select_clusters(X = data[['x1', 'x2', 'x3']], 
-                                                    y = data['y'])
+    n_clusters, inertia = k_means.select_clusters(X = data[['x1', 'x2', 'x3']])
 
     print(inertia)
