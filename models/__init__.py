@@ -1,1 +1,1 @@
-from .catboost_model import catboost_feat_importance
+from catboost_model import CatBoostClassifier, CatBoostRegressor
