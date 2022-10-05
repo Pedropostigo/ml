@@ -1,4 +1,5 @@
-import catboost as cat
+from catboost import CatBoostRegressor as _CatBoostRegressor
+from catboost import CatBoostClassifier as _CatBoostClassifier
 
 """
 Module with a CatBoost object, and object to wrap all the utility functions
@@ -26,14 +27,14 @@ def catboost_feat_importance(model, data):
     return importances
 
 
-class CatBoostRegressor(cat.CatBoostRegressor):
+class CatBoostRegressor(_CatBoostRegressor):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
 
 
-class CatBoostClassifier(cat.CatBoostClassifier):
+class CatBoostClassifier(_CatBoostClassifier):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

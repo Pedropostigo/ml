@@ -1,1 +1,1 @@
-from catboost_model import CatBoostClassifier, CatBoostRegressor
+from .catboost_model import CatBoostClassifier, CatBoostRegressor
